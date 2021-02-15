@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 public class ThirdPersonPlayerController : MonoBehaviour
 {
-    // Tracking of player's input
+    // Track player's input
     private Vector2 moveDirection;
     private float jumpDirection;
 
@@ -24,26 +24,25 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
     // Jumping with physics
     bool onGround = true;
-    float groundRayDistance = 2f;
+    float groundRayDistance = 3f;
 
-    // Handles for needed components
     private Animator _anim;
     private Rigidbody _rb;
 
-    /// Input event that returns Vector2 as "context" and assigns it to Vector2 moveDirection
+    #region InputSystem
     public void OnMove(InputAction.CallbackContext context)
     {
         moveDirection = context.ReadValue<Vector2>();
         // Debug.Log(moveDirection);
     }
 
-    // Input event ...
     public void OnJump(InputAction.CallbackContext context)
     {
         jumpDirection = context.ReadValue<float>();
     }
+    #endregion
 
-    // Helper for calculation of acceleration or deceleration, returns 0 if not moving
+    // Calculate acceleration/deceleration, returns 0 if not moving
     bool IsMoveInput
     {
         get
@@ -51,7 +50,6 @@ public class ThirdPersonPlayerController : MonoBehaviour
             return !Mathf.Approximately(moveDirection.sqrMagnitude, 0f);
         }
     }
-
 
     // Move character using the Vector2 moveDirection provided by OnMove()
     void Move(Vector2 moveDirection)
@@ -82,8 +80,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
         transform.Rotate(0, turnAmount * turnSpeed * Time.deltaTime, 0);
     }
 
+    // Jump using float jumpDirection provided by OnJump()
     void Jump(float jumpDirection)
     {
+        // Input coming and character grounded
         if (jumpDirection > 0 && onGround)
         { 
             readyJump = true;
@@ -91,16 +91,20 @@ public class ThirdPersonPlayerController : MonoBehaviour
         }
         else if(readyJump)
         {
-            _anim.SetBool("ReadyJump", false);
+            _anim.SetBool("Launch", true);
             readyJump = false;
+            _anim.SetBool("ReadyJump", false);
         }
     }
 
-    void OnCollisionEnter(Collision col)
+    // Called via event in JumpIdleStart.anim
+    public void Launch()
     {
-        //_anim.SetBool("Land", true);
+        // Take off from the ground
+        _anim.SetBool("Launch", false);
     }
 
+    // Called via event
     public void Land()
     {
         // Debug.Log("Character Landed");
@@ -120,10 +124,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
         Move(moveDirection);
         Jump(jumpDirection);
 
-        // Detect landing with ray - OnCollisionEnter detects landing only once character is grounded already
+        // Needed for syncing landing animation - adjust groundRayDistance if needed
         RaycastHit hit;
         Ray ray = new Ray(transform.position + Vector3.up * groundRayDistance * 0.5f, -Vector3.up);
-        if(Physics.Raycast(ray, out hit, groundRayDistance))
+        if (Physics.Raycast(ray, out hit, groundRayDistance))
         {
             if (!onGround)
             {
