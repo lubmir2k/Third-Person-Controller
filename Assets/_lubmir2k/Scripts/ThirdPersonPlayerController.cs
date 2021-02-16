@@ -24,7 +24,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
     // Jumping with physics
     bool onGround = true;
-    float groundRayDistance = 3f;
+    float groundRayDistance = 1f;
 
     private Animator _anim;
     private Rigidbody _rb;
